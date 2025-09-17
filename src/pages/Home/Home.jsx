@@ -1,7 +1,7 @@
 import React from 'react'
 import Carousel from '../../components/Home/Carousel.jsx';
 import Promociones from '../../components/Home/Promociones.jsx';
-import { promociones } from '../../data/Promocionesdata.js';
+import { promociones } from '../../data/PromocionesData.js';
 import CotizacionCTA from '../../components/Home/Cotizaciones.jsx';
 import ProcesoCompra from '../../components/Home/ProcesoCompra.jsx';
 export default function Home() {
