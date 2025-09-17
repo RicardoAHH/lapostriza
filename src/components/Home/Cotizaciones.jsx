@@ -1,5 +1,6 @@
 // src/components/CotizacionCTA.jsx
 import React from 'react';
+import { Link } from 'react-router';
 
 const CotizacionCTA = () => {
     return (
@@ -12,12 +13,12 @@ const CotizacionCTA = () => {
                     Con gusto te apoyamos en tu fiesta, reunión o evento especial.
                 </p>
                 <div className="mt-10 flex justify-center">
-                    <a
-                        href="/cotizaciones" // Reemplaza con la ruta de tu página de cotizaciones
+                    <Link
+                        to="/cotizaciones" // Reemplaza con la ruta de tu página de cotizaciones
                         className="inline-block rounded-md border border-transparent bg-[#FF007F] px-8 py-3 text-base font-medium text-white shadow-sm hover:bg-[#6df17c] hover:text-black transition-colors duration-300"
                     >
                         Solicitar Cotización
-                    </a>
+                    </Link>
                 </div>
             </div>
         </div>

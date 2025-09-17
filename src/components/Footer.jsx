@@ -1,5 +1,6 @@
 // src/components/Footer.jsx
 import React from 'react';
+import { Link } from 'react-router';
 
 const Footer = () => {
     return (
@@ -29,24 +30,24 @@ const Footer = () => {
                         <h3 className="text-lg font-semibold text-[#4ead9f]">Navegación</h3>
                         <ul className="mt-4 space-y-2 text-sm text-gray-400">
                             <li>
-                                <a href="/" className="hover:text-[#6df17c] transition-colors duration-300">
+                                <Link to="/" className="hover:text-[#6df17c] transition-colors duration-300">
                                     Inicio
-                                </a>
+                                </Link>
                             </li>
                             <li>
-                                <a href="/nosotros" className="hover:text-[#6df17c] transition-colors duration-300">
+                                <Link to="/nosotros" className="hover:text-[#6df17c] transition-colors duration-300">
                                     Nosotros
-                                </a>
+                                </Link>
                             </li>
                             <li>
-                                <a href="/ordenar" className="hover:text-[#6df17c] transition-colors duration-300">
+                                <Link to="/ordenar" className="hover:text-[#6df17c] transition-colors duration-300">
                                     Ordenar
-                                </a>
+                                </Link>
                             </li>
                             <li>
-                                <a href="/cotizaciones" className="hover:text-[#6df17c] transition-colors duration-300">
+                                <Link to="/cotizaciones" className="hover:text-[#6df17c] transition-colors duration-300">
                                     Cotizaciones
-                                </a>
+                                </Link>
                             </li>
                         </ul>
                     </div>
