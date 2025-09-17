@@ -29,22 +29,22 @@ const Footer = () => {
                         <h3 className="text-lg font-semibold text-[#4ead9f]">Navegación</h3>
                         <ul className="mt-4 space-y-2 text-sm text-gray-400">
                             <li>
-                                <a href="#" className="hover:text-[#6df17c] transition-colors duration-300">
+                                <a href="/" className="hover:text-[#6df17c] transition-colors duration-300">
                                     Inicio
                                 </a>
                             </li>
                             <li>
-                                <a href="#nosotros" className="hover:text-[#6df17c] transition-colors duration-300">
+                                <a href="/nosotros" className="hover:text-[#6df17c] transition-colors duration-300">
                                     Nosotros
                                 </a>
                             </li>
                             <li>
-                                <a href="#ordenar" className="hover:text-[#6df17c] transition-colors duration-300">
+                                <a href="/ordenar" className="hover:text-[#6df17c] transition-colors duration-300">
                                     Ordenar
                                 </a>
                             </li>
                             <li>
-                                <a href="#cotizaciones" className="hover:text-[#6df17c] transition-colors duration-300">
+                                <a href="/cotizaciones" className="hover:text-[#6df17c] transition-colors duration-300">
                                     Cotizaciones
                                 </a>
                             </li>

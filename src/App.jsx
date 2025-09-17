@@ -8,9 +8,12 @@ import Nosotros from './pages/Nosotros/Nosotros.jsx';
 import { CartProvider } from './context/CartContext.jsx';
 import Checkout from './pages/Checkout/Checkout.jsx';
 import Confirmacion from './pages/Confirmacion/Confirmacion.jsx';
+import ScrollToTop from './components/ScrollToTop.jsx';
+import Login from './pages/Login/Login.jsx';
 function App() {
   return (
     <>
+      <ScrollToTop />
       <CartProvider>
         <Header />
         <Routes>
@@ -20,9 +23,11 @@ function App() {
           <Route path='/nosotros' element={<Nosotros />} />
           <Route path='/checkout' element={<Checkout />} />
           <Route path='/confirmacion' element={<Confirmacion />} />
+          <Route path='/login' element={<Login />} />
         </Routes>
         <Footer />
       </CartProvider>
+
     </>
   )
 }

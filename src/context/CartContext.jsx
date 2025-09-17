@@ -10,27 +10,26 @@ export const useCart = () => {
 export const CartProvider = ({ children }) => {
     const [cartItems, setCartItems] = useState([]);
 
-    const addToCart = (product, quantity = 1) => {
+    const addToCart = (product) => { // Eliminado el parámetro "quantity" con valor predeterminado
         setCartItems(prevItems => {
-            // Buscamos si ya existe un item con el mismo ID y la misma OPCIÓN
             const existingItem = prevItems.find(item =>
                 item.id === product.id && item.opcionSeleccionada.id === product.opcionSeleccionada.id
             );
 
             if (existingItem) {
+                // Si el producto ya existe, se suma la cantidad del producto entrante
                 return prevItems.map(item =>
                     item.id === product.id && item.opcionSeleccionada.id === product.opcionSeleccionada.id
-                        ? { ...item, quantity: item.quantity + quantity }
+                        ? { ...item, quantity: item.quantity + product.quantity }
                         : item
                 );
             } else {
-                return [...prevItems, { ...product, quantity: quantity }];
+                // Si es un producto nuevo, se añade con su cantidad
+                return [...prevItems, { ...product }];
             }
         });
     };
 
-    // El resto de las funciones (removeFromCart, incrementQuantity, etc.)
-    // también deben ajustarse para manejar la identificación por opción.
     const removeFromCart = (productId, optionId) => {
         setCartItems(prevItems => prevItems.filter(item =>
             !(item.id === productId && item.opcionSeleccionada.id === optionId)
@@ -57,7 +56,6 @@ export const CartProvider = ({ children }) => {
         );
     };
 
-    // La función del precio total debe usar el precio final del producto
     const cartTotalPrice = cartItems.reduce((total, item) => total + item.precioFinal * item.quantity, 0);
 
     const value = {

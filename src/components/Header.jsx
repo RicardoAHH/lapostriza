@@ -89,9 +89,13 @@ const Header = () => {
                     </ul>
                 </nav>
             </div>
-
-            {/* Contenedor Derecho: Botón de Carrito con Contador */}
-            <div className="flex-1 flex justify-end space-x-4">
+            {/* Contenedor Derecho: Botón de Login y Carrito */}
+            <div className="flex-1 flex justify-end items-center space-x-4">
+                {/* Botón de Iniciar Sesión */}
+                <Link to="/login" className="text-black hover:text-white transition-colors duration-300">
+                    <img src="/login-7.svg" alt="login" className="h-8 w-8 md:h-7 md:w-7" />
+                </Link>
+                {/* Botón de Carrito con Contador */}
                 <button
                     onClick={toggleCart}
                     ref={cartButtonRef}

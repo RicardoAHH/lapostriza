@@ -31,14 +31,19 @@ const CartModal = forwardRef(({ onClose }, ref) => {
                                     <div className="flex-1">
                                         <p className="text-sm font-medium text-gray-900">{item.nombre}</p>
                                         <p className="text-xs text-gray-500">{item.opcionSeleccionada.nombre}</p>
-                                        <p className="text-sm font-bold text-[#FF007F] mt-1">${(item.precioFinal * item.quantity).toFixed(2)}</p>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            ${item.precioFinal.toFixed(2)} x {item.quantity} {item.quantity > 1 ? 'piezas' : 'pieza'}
+                                        </p>
+                                        <p className="text-sm font-bold text-[#FF007F] mt-1">
+                                            ${(item.precioFinal * item.quantity).toFixed(2)}
+                                        </p>
                                     </div>
                                     <div className="flex items-center space-x-2">
                                         <button onClick={() => decrementQuantity(item.id, item.opcionSeleccionada.id)} className="text-gray-500 hover:text-gray-900">-</button>
                                         <span className="text-sm">{item.quantity}</span>
                                         <button onClick={() => incrementQuantity(item.id, item.opcionSeleccionada.id)} className="text-gray-500 hover:text-gray-900">+</button>
                                     </div>
-                                    <button onClick={() => removeFromCart(item.id, item.opcionSeleccionada.id)} className="text-gray-400 hover:text-red-500">
+                                    <button onClick={() => removeFromCart(item.id, item.opcionSeleccionada.id)} className="text-white bg-red-500 rounded-md hover:text-green-500">
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                         </svg>
