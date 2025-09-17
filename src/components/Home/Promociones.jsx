@@ -1,6 +1,6 @@
 // src/components/Promociones.jsx
 import React from 'react';
-import { promociones } from '../../data/Promocionesdata';
+import { promociones } from '../../data/promocionesdata';
 
 const Promociones = ({ promocionesData }) => {
     return (
