@@ -21,7 +21,7 @@ const Footer = () => {
                                     +52 55 1234 5678
                                 </a>
                             </li>
-                            <li>123 Calle de los Postres, Ciudad Dulce</li>
+                            <li>Dalias esquina primavera, Dos Rios, Huixquilucan</li>
                         </ul>
                     </div>
 
@@ -105,7 +105,7 @@ const Footer = () => {
 
                 {/* Derechos de autor */}
                 <div className="mt-8 pt-8 border-t border-gray-700 text-center text-sm text-gray-400">
-                    <p>&copy; {new Date().getFullYear()} Nombre de tu Postrería. Todos los derechos reservados.</p>
+                    <p>&copy; {new Date().getFullYear()} La postriza. Todos los derechos reservados.</p>
                 </div>
             </div>
         </footer>
