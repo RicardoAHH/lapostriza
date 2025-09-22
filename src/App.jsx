@@ -10,6 +10,10 @@ import Checkout from './pages/Checkout/Checkout.jsx';
 import Confirmacion from './pages/Confirmacion/Confirmacion.jsx';
 import ScrollToTop from './components/ScrollToTop.jsx';
 import Login from './pages/Login/Login.jsx';
+import Register from './pages/Register/Register.jsx';
+import ProtectedRoute from './components/ProtectedRoute.jsx';
+import AdminDashboard from './pages/AdminDashboard/AdminDashBoard.jsx';
+import CustomerDashboard from './pages/CustomerDashboard/CustomerDashboard.jsx';
 function App() {
   return (
     <>
@@ -24,6 +28,11 @@ function App() {
           <Route path='/checkout' element={<Checkout />} />
           <Route path='/confirmacion' element={<Confirmacion />} />
           <Route path='/login' element={<Login />} />
+          <Route path="/registro" element={<Register />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path='/admin' element={<AdminDashboard />} />
+            <Route path="/dashboard-cliente" element={<CustomerDashboard />} />
+          </Route>
         </Routes>
         <Footer />
       </CartProvider>

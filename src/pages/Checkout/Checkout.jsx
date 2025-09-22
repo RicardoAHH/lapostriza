@@ -1,49 +1,95 @@
-// src/pages/Checkout.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCart } from '../../context/CartContext';
-import { Link, useNavigate } from 'react-router'; // Importa useNavigate
-
+import { Link, useNavigate } from 'react-router';
+import { db, auth } from '../../firebase';
+import { addDoc, collection, serverTimestamp, doc, getDoc } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
 const Checkout = () => {
-    const { cartItems, cartTotalPrice } = useCart();
+    const { cartItems, cartTotalPrice, clearCart } = useCart();
+    const navigate = useNavigate();
+    // Estado local para los campos del formulario
+    const [nombre, setNombre] = useState('');
+    const [telefono, setTelefono] = useState('');
+    const [email, setEmail] = useState('');
+    const [direccion, setDireccion] = useState('');
+    const [referencia, setReferencia] = useState('');
     const [opcionEnvio, setOpcionEnvio] = useState('domicilio');
-    const navigate = useNavigate(); // Inicializa el hook
-
+    const [loading, setLoading] = useState(true); // Estado de carga inicial
+    const [error, setError] = useState(null);
+    const [user, setUser] = useState(null);
+    // Cargar los datos del perfil del usuario si está autenticado
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+            if (currentUser) {
+                // Si hay un usuario logueado
+                setUser(currentUser);
+                setEmail(currentUser.email); // Precargar el email del usuario
+                const profileDocRef = doc(db, 'profiles', currentUser.uid);
+                const profileSnap = await getDoc(profileDocRef);
+                if (profileSnap.exists()) {
+                    const profileData = profileSnap.data();
+                    setNombre(profileData.nombre || '');
+                    setTelefono(profileData.telefono || '');
+                    setDireccion(profileData.direccion || '');
+                }
+            } else {
+                // No hay usuario logueado, es un invitado
+                setUser(null);
+            }
+            setLoading(false);
+        });
+        return () => unsubscribe();
+    }, []);
     const costoEnvio = opcionEnvio === 'domicilio' && cartTotalPrice < 200 ? 15 : 0;
     const totalFinal = cartTotalPrice + costoEnvio;
-
     const handleOpcionEnvioChange = (event) => {
         setOpcionEnvio(event.target.value);
     };
-
-    // Función para manejar el "envío" del pedido
-    const handleOrder = (event) => {
-        event.preventDefault(); // Evita que la página se recargue
-
-        // Aquí iría la lógica para enviar los datos del pedido
-        // Por ahora, solo simularemos el proceso
-        const formData = new FormData(event.target);
+    const handleOrder = async (event) => {
+        event.preventDefault();
+        setLoading(true);
+        setError(null);
+        // Determinar el ID del usuario. Si está logueado, usar su UID. Si no, generar un ID de invitado.
+        const userId = user ? user.uid : `guest_${crypto.randomUUID()}`;
         const orderData = {
-            nombre: formData.get('nombreApellido'),
-            opcion: opcionEnvio,
-            direccion: opcionEnvio === 'domicilio' ? formData.get('direccion') : 'N/A',
-            referencia: opcionEnvio === 'domicilio' ? formData.get('referencia') : 'N/A',
+            nombre,
+            telefono,
+            email, // Usar el email del estado, que puede ser del usuario logueado o del invitado
+            opcionEnvio,
+            direccion: opcionEnvio === 'domicilio' ? direccion : 'N/A',
+            referencia: opcionEnvio === 'domicilio' ? referencia : 'N/A',
             items: cartItems,
-            total: totalFinal,
+            subtotal: cartTotalPrice,
+            costoEnvio: costoEnvio,
+            totalFinal: totalFinal,
+            fechaPedido: serverTimestamp(),
+            status: 'Pendiente',
+            userId: userId,
         };
-
-        console.log("Pedido confirmado:", orderData);
-
-        // Redirigir al usuario a la página de confirmación
-        navigate('/confirmacion');
+        try {
+            await addDoc(collection(db, 'pedidos'), orderData);
+            clearCart();
+            navigate('/confirmacion');
+        } catch (err) {
+            console.error("Error al guardar el pedido:", err);
+            setError("Ocurrió un error al procesar tu pedido. Intenta de nuevo.");
+        } finally {
+            setLoading(false);
+        }
     };
-
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+                <p className="text-gray-500">Cargando...</p>
+            </div>
+        );
+    }
     return (
         <div className="bg-gray-50 py-16 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto">
                 <h1 className="text-3xl font-extrabold tracking-tight text-[#FF007F] sm:text-4xl text-center mb-12">
                     Finalizar Pedido
                 </h1>
-
                 <div className="lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16">
                     {/* Resumen del Pedido */}
                     <div>
@@ -83,7 +129,6 @@ const Checkout = () => {
                                 </ul>
                             )}
                         </div>
-
                         {/* Totales y Costo de Envío */}
                         <div className="mt-6 border-t border-gray-200 pt-6">
                             <div className="flex justify-between font-medium text-lg text-gray-900 mb-2">
@@ -100,10 +145,14 @@ const Checkout = () => {
                             </div>
                         </div>
                     </div>
-
                     {/* Formulario de Envío */}
                     <div className="mt-10 lg:mt-0">
                         <h2 className="text-2xl font-bold text-gray-900 mb-6">Datos de Envío</h2>
+                        {error && (
+                            <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+                                <p>{error}</p>
+                            </div>
+                        )}
                         <form onSubmit={handleOrder} className="bg-white rounded-lg shadow-lg p-6">
                             {/* Opciones de envío */}
                             <div className="mb-6">
@@ -133,8 +182,7 @@ const Checkout = () => {
                                     </label>
                                 </div>
                             </div>
-
-                            {/* Campos del formulario: Nombre siempre visible */}
+                            {/* Campos del formulario */}
                             <div className="space-y-6">
                                 <div>
                                     <label htmlFor="nombreApellido" className="block text-sm font-medium text-gray-700">
@@ -144,11 +192,41 @@ const Checkout = () => {
                                         type="text"
                                         id="nombreApellido"
                                         name="nombreApellido"
+                                        value={nombre}
+                                        onChange={(e) => setNombre(e.target.value)}
                                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#6df17c] focus:border-[#6df17c]"
                                         required
                                     />
                                 </div>
-
+                                <div>
+                                    <label htmlFor="telefono" className="block text-sm font-medium text-gray-700">
+                                        Teléfono
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        id="telefono"
+                                        name="telefono"
+                                        value={telefono}
+                                        onChange={(e) => setTelefono(e.target.value)}
+                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#6df17c] focus:border-[#6df17c]"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                                        Correo Electrónico
+                                    </label>
+                                    <input
+                                        type="email"
+                                        id="email"
+                                        name="email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#6df17c] focus:border-[#6df17c]"
+                                        required
+                                        disabled={user !== null} // Deshabilitar si el usuario está logueado para que no lo cambie
+                                    />
+                                </div>
                                 {/* Dirección y Referencias solo si la opción es "domicilio" */}
                                 {opcionEnvio === 'domicilio' && (
                                     <>
@@ -160,6 +238,8 @@ const Checkout = () => {
                                                 type="text"
                                                 id="direccion"
                                                 name="direccion"
+                                                value={direccion}
+                                                onChange={(e) => setDireccion(e.target.value)}
                                                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#6df17c] focus:border-[#6df17c]"
                                                 required
                                             />
@@ -171,6 +251,8 @@ const Checkout = () => {
                                             <textarea
                                                 id="referencia"
                                                 name="referencia"
+                                                value={referencia}
+                                                onChange={(e) => setReferencia(e.target.value)}
                                                 rows="3"
                                                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#6df17c] focus:border-[#6df17c]"
                                             ></textarea>
@@ -178,20 +260,23 @@ const Checkout = () => {
                                     </>
                                 )}
                             </div>
-
                             <div className="mt-8">
                                 <button
                                     type="submit"
+                                    disabled={loading}
                                     className="w-full rounded-md border border-transparent bg-[#FF007F] px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-[#6df17c] hover:text-black transition-colors duration-300"
                                 >
-                                    Confirmar pedido
+                                    {loading ? 'Confirmando...' : 'Confirmar pedido'}
                                 </button>
-                                <Link
-                                    to="/login"
-                                    className="mt-4 block w-full text-center rounded-md border border-[#FF007F] px-6 py-3 text-base font-medium text-[#FF007F] shadow-sm hover:bg-[#FF007F] hover:text-white transition-colors duration-300"
-                                >
-                                    Iniciar sesión
-                                </Link>
+                                {/* El botón de "Iniciar sesión" solo se muestra si el usuario no está logueado */}
+                                {!user && (
+                                    <Link
+                                        to="/login"
+                                        className="mt-4 block w-full text-center rounded-md border border-[#FF007F] px-6 py-3 text-base font-medium text-[#FF007F] shadow-sm hover:bg-[#FF007F] hover:text-white transition-colors duration-300"
+                                    >
+                                        Iniciar sesión
+                                    </Link>
+                                )}
                             </div>
                         </form>
                     </div>
@@ -200,5 +285,4 @@ const Checkout = () => {
         </div>
     );
 };
-
 export default Checkout;

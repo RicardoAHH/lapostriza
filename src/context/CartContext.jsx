@@ -1,4 +1,3 @@
-// src/context/CartContext.jsx
 import React, { createContext, useState, useContext } from 'react';
 
 const CartContext = createContext();
@@ -10,21 +9,24 @@ export const useCart = () => {
 export const CartProvider = ({ children }) => {
     const [cartItems, setCartItems] = useState([]);
 
-    const addToCart = (product) => { // Eliminado el parámetro "quantity" con valor predeterminado
+    // Función para vaciar el carrito
+    const clearCart = () => {
+        setCartItems([]);
+    };
+
+    const addToCart = (product) => {
         setCartItems(prevItems => {
             const existingItem = prevItems.find(item =>
                 item.id === product.id && item.opcionSeleccionada.id === product.opcionSeleccionada.id
             );
 
             if (existingItem) {
-                // Si el producto ya existe, se suma la cantidad del producto entrante
                 return prevItems.map(item =>
                     item.id === product.id && item.opcionSeleccionada.id === product.opcionSeleccionada.id
                         ? { ...item, quantity: item.quantity + product.quantity }
                         : item
                 );
             } else {
-                // Si es un producto nuevo, se añade con su cantidad
                 return [...prevItems, { ...product }];
             }
         });
@@ -66,6 +68,8 @@ export const CartProvider = ({ children }) => {
         decrementQuantity,
         cartItemCount: cartItems.reduce((total, item) => total + item.quantity, 0),
         cartTotalPrice,
+        // Se añade la función clearCart al objeto value para que sea accesible
+        clearCart,
     };
 
     return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
