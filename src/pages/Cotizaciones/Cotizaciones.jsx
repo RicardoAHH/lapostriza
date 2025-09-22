@@ -1,9 +1,66 @@
-// src/pages/Cotizaciones.jsx
-import React from 'react';
-import Header from '../../components/Header';
-import Footer from '../../components/Footer';
+import React, { useState } from 'react';
+import { initializeApp, getApps } from 'firebase/app';
+import { getFirestore, collection, addDoc } from 'firebase/firestore';
+
+// =========================================================================
+// Lógica principal del componente Cotizaciones
+// =========================================================================
 
 const Cotizaciones = () => {
+    // Inicialización de Firebase (con la verificación para evitar duplicados)
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+    const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+    const db = getFirestore(app);
+
+    // Estado para los datos del formulario
+    const [formData, setFormData] = useState({
+        nombre: '',
+        telefono: '',
+        email: '',
+        tipoEvento: 'Cumpleaños', // Valor por defecto
+        descripcion: ''
+    });
+
+    // Estado para el mensaje de respuesta al usuario
+    const [submissionMessage, setSubmissionMessage] = useState('');
+
+    // Maneja los cambios en los campos del formulario
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prevState => ({
+            ...prevState,
+            [name]: value
+        }));
+    };
+
+    // Maneja el envío del formulario
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSubmissionMessage('Enviando...');
+
+        try {
+            // Añade un nuevo documento a la colección 'cotizaciones'
+            await addDoc(collection(db, 'cotizaciones'), {
+                ...formData,
+                fechaEnvio: new Date()
+            });
+
+            // Muestra un mensaje de éxito y limpia el formulario
+            setSubmissionMessage('¡Tu cotización ha sido enviada con éxito!');
+            setFormData({
+                nombre: '',
+                telefono: '',
+                email: '',
+                tipoEvento: 'Cumpleaños',
+                descripcion: ''
+            });
+
+        } catch (error) {
+            console.error("Error al añadir el documento: ", error);
+            setSubmissionMessage('Hubo un error al enviar tu cotización. Por favor, inténtalo de nuevo.');
+        }
+    };
+
     return (
         <div className="flex flex-col min-h-screen">
             <main className="flex-grow bg-gray-50 py-16 md:py-24">
@@ -19,7 +76,7 @@ const Cotizaciones = () => {
                     <div className="mx-auto mt-12 max-w-xl">
                         {/* Formulario de Cotización */}
                         <div className="bg-white rounded-lg shadow-xl p-8 md:p-10">
-                            <form className="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-8">
+                            <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-8">
                                 <div>
                                     <label htmlFor="nombre" className="block text-sm font-medium text-gray-700">
                                         Nombre completo
@@ -30,6 +87,9 @@ const Cotizaciones = () => {
                                             name="nombre"
                                             id="nombre"
                                             autoComplete="name"
+                                            value={formData.nombre}
+                                            onChange={handleChange}
+                                            required
                                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FF007F] focus:ring-[#FF007F] sm:text-sm p-2"
                                         />
                                     </div>
@@ -44,6 +104,9 @@ const Cotizaciones = () => {
                                             name="telefono"
                                             id="telefono"
                                             autoComplete="tel"
+                                            value={formData.telefono}
+                                            onChange={handleChange}
+                                            required
                                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FF007F] focus:ring-[#FF007F] sm:text-sm p-2"
                                         />
                                     </div>
@@ -58,6 +121,9 @@ const Cotizaciones = () => {
                                             name="email"
                                             type="email"
                                             autoComplete="email"
+                                            value={formData.email}
+                                            onChange={handleChange}
+                                            required
                                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FF007F] focus:ring-[#FF007F] sm:text-sm p-2"
                                         />
                                     </div>
@@ -70,6 +136,8 @@ const Cotizaciones = () => {
                                         <select
                                             id="tipoEvento"
                                             name="tipoEvento"
+                                            value={formData.tipoEvento}
+                                            onChange={handleChange}
                                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FF007F] focus:ring-[#FF007F] sm:text-sm p-2"
                                         >
                                             <option>Cumpleaños</option>
@@ -89,8 +157,10 @@ const Cotizaciones = () => {
                                             id="descripcion"
                                             name="descripcion"
                                             rows={4}
+                                            value={formData.descripcion}
+                                            onChange={handleChange}
+                                            required
                                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-[#FF007F] focus:ring-[#FF007F] sm:text-sm p-2"
-                                            defaultValue={''}
                                         />
                                     </div>
                                 </div>
@@ -103,6 +173,11 @@ const Cotizaciones = () => {
                                     </button>
                                 </div>
                             </form>
+                            {submissionMessage && (
+                                <p className="mt-4 text-center text-sm font-medium">
+                                    {submissionMessage}
+                                </p>
+                            )}
                         </div>
                     </div>
                 </div>
