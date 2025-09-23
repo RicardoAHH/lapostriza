@@ -46,7 +46,7 @@ const Cotizaciones = () => {
             });
 
             // Muestra un mensaje de éxito y limpia el formulario
-            setSubmissionMessage('¡Tu cotización ha sido enviada con éxito!');
+            setSubmissionMessage('¡Tu cotización ha sido enviada con éxito, nos comunicaremos contigo pronto para más detalles!');
             setFormData({
                 nombre: '',
                 telefono: '',

@@ -11,26 +11,25 @@ const AdminDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [selectedQuote, setSelectedQuote] = useState(null);
-    const [activeTab, setActiveTab] = useState('pedidos'); // 'pedidos' o 'cotizaciones'
+    const [activeTab, setActiveTab] = useState('pedidos');
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [orderToCancel, setOrderToCancel] = useState(null);
 
-    // Habilitar logging para debug
     setLogLevel('debug');
 
     useEffect(() => {
-        // Redirigir si el usuario no está autenticado
         const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
             if (!user) {
                 navigate('/login');
             }
         });
 
-        // Configurar el listener de Firestore para pedidos en tiempo real
         const qOrders = query(collection(db, 'pedidos'));
         const unsubscribeOrders = onSnapshot(qOrders, (snapshot) => {
             const ordersData = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data(),
-            })).sort((a, b) => b.fechaPedido.toDate() - a.fechaPedido.toDate()); // Ordenar en memoria
+            })).sort((a, b) => b.fechaPedido?.toDate() - a.fechaPedido?.toDate());
             setOrders(ordersData);
             setLoading(false);
         }, (error) => {
@@ -38,19 +37,17 @@ const AdminDashboard = () => {
             setLoading(false);
         });
 
-        // Configurar el listener de Firestore para cotizaciones en tiempo real
         const qQuotes = query(collection(db, 'cotizaciones'));
         const unsubscribeQuotes = onSnapshot(qQuotes, (snapshot) => {
             const quotesData = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data(),
-            })).sort((a, b) => b.fechaEnvio.toDate() - a.fechaEnvio.toDate()); // Ordenar en memoria
+            })).sort((a, b) => b.fechaEnvio?.toDate() - a.fechaEnvio?.toDate());
             setQuotes(quotesData);
         }, (error) => {
             console.error("Error al obtener las cotizaciones:", error);
         });
 
-        // Limpiar los listeners al desmontar el componente
         return () => {
             unsubscribeAuth();
             unsubscribeOrders();
@@ -67,12 +64,36 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleOpenCancelModal = (order) => {
+        setOrderToCancel(order);
+        setShowCancelModal(true);
+    };
+
+    const handleCloseCancelModal = () => {
+        setOrderToCancel(null);
+        setShowCancelModal(false);
+    };
+
     const handleUpdateStatus = async (orderId, newStatus) => {
         try {
             const orderDocRef = doc(db, 'pedidos', orderId);
             await updateDoc(orderDocRef, { status: newStatus });
+            setSelectedOrder(null);
         } catch (error) {
             console.error('Error al actualizar el estado:', error);
+        }
+    };
+
+    const handleCancelOrder = async () => {
+        if (!orderToCancel) return;
+        try {
+            const orderDocRef = doc(db, 'pedidos', orderToCancel.id);
+            await updateDoc(orderDocRef, { status: 'Cancelado' });
+            setSelectedOrder(null);
+            setOrderToCancel(null);
+            setShowCancelModal(false);
+        } catch (error) {
+            console.error('Error al cancelar el pedido:', error);
         }
     };
 
@@ -91,7 +112,7 @@ const AdminDashboard = () => {
 
         return (
             <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
-                <div className="relative bg-white p-8 rounded-lg shadow-xl max-w-2xl w-full">
+                <div className="relative bg-white p-8 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                     <button
                         onClick={() => setSelectedOrder(null)}
                         className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl"
@@ -104,7 +125,14 @@ const AdminDashboard = () => {
                         <p><strong>Correo:</strong> {selectedOrder.email}</p>
                         <p><strong>Teléfono:</strong> {selectedOrder.telefono}</p>
                         <p><strong>Fecha:</strong> {selectedOrder.fechaPedido?.toDate().toLocaleString()}</p>
-                        <p><strong>Estado:</strong> <span className={`font-semibold ${selectedOrder.status === 'Completado' ? 'text-green-600' : 'text-orange-500'}`}>{selectedOrder.status}</span></p>
+                        <p>
+                            <strong>Estado:</strong>{' '}
+                            <span
+                                className={`font-semibold ${selectedOrder.status === 'Completado' ? 'text-green-600' : selectedOrder.status === 'Cancelado' ? 'text-red-600' : 'text-orange-500'}`}
+                            >
+                                {selectedOrder.status}
+                            </span>
+                        </p>
                         <hr className="my-2" />
                         <h4 className="text-xl font-semibold mb-2">Información de Envío:</h4>
                         <p><strong>Opción de Envío:</strong> {selectedOrder.opcionEnvio === 'domicilio' ? 'Envío a Domicilio' : 'Recoger en Tienda'}</p>
@@ -143,10 +171,44 @@ const AdminDashboard = () => {
                         </button>
                         <button
                             onClick={() => handleUpdateStatus(selectedOrder.id, 'Completado')}
-                            disabled={selectedOrder.status === 'Completado'}
+                            disabled={selectedOrder.status === 'Completado' || selectedOrder.status === 'Cancelado'}
                             className="flex-1 bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 disabled:bg-gray-400 transition-colors"
                         >
                             Marcar como 'Completado'
+                        </button>
+                        <button
+                            onClick={() => handleOpenCancelModal(selectedOrder)}
+                            disabled={selectedOrder.status === 'Completado' || selectedOrder.status === 'Cancelado'}
+                            className="flex-1 bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 disabled:bg-gray-400 transition-colors"
+                        >
+                            Cancelar Pedido
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const renderCancelModal = () => {
+        if (!showCancelModal || !orderToCancel) return null;
+
+        return (
+            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+                <div className="relative bg-white p-8 rounded-lg shadow-xl max-w-sm w-full text-center">
+                    <h3 className="text-xl font-bold text-red-600 mb-4">Confirmar Cancelación</h3>
+                    <p className="mb-6 text-gray-700">¿Estás seguro que deseas cancelar el pedido #<strong>{orderToCancel.id}</strong>? Esta acción no se puede deshacer.</p>
+                    <div className="flex justify-center space-x-4">
+                        <button
+                            onClick={handleCloseCancelModal}
+                            className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors"
+                        >
+                            No, volver
+                        </button>
+                        <button
+                            onClick={handleCancelOrder}
+                            className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors"
+                        >
+                            Sí, Cancelar
                         </button>
                     </div>
                 </div>
@@ -220,7 +282,11 @@ const AdminDashboard = () => {
                         ) : (
                             <div className="space-y-4">
                                 {orders.map((order) => (
-                                    <div key={order.id} className="bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleOrderClick(order)}>
+                                    <div
+                                        key={order.id}
+                                        className="bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center cursor-pointer hover:bg-gray-100 transition-colors"
+                                        onClick={() => handleOrderClick(order)}
+                                    >
                                         <div className="flex flex-col mb-2 sm:mb-0">
                                             <span className="font-semibold text-gray-900">Pedido de {order.nombre}</span>
                                             <span className="text-sm text-gray-500">
@@ -231,7 +297,9 @@ const AdminDashboard = () => {
                                             <span className="font-bold text-lg text-[#FF007F]">
                                                 ${order.totalFinal?.toFixed(2)}
                                             </span>
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${order.status === 'Pendiente' ? 'bg-orange-100 text-orange-800' : order.status === 'En Proceso' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
+                                            <span
+                                                className={`px-2 py-1 rounded-full text-xs font-medium ${order.status === 'Pendiente' ? 'bg-orange-100 text-orange-800' : order.status === 'En Proceso' ? 'bg-yellow-100 text-yellow-800' : order.status === 'Completado' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+                                            >
                                                 {order.status}
                                             </span>
                                         </div>
@@ -251,7 +319,11 @@ const AdminDashboard = () => {
                         ) : (
                             <div className="space-y-4">
                                 {quotes.map((quote) => (
-                                    <div key={quote.id} className="bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleQuoteClick(quote)}>
+                                    <div
+                                        key={quote.id}
+                                        className="bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center cursor-pointer hover:bg-gray-100 transition-colors"
+                                        onClick={() => handleQuoteClick(quote)}
+                                    >
                                         <div className="flex flex-col mb-2 sm:mb-0">
                                             <span className="font-semibold text-gray-900">Cotización de {quote.nombre}</span>
                                             <span className="text-sm text-gray-500">
@@ -270,6 +342,7 @@ const AdminDashboard = () => {
             </div>
             {renderOrderDetails()}
             {renderQuoteDetails()}
+            {renderCancelModal()}
         </div>
     );
 };
