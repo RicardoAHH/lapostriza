@@ -102,9 +102,19 @@ const AdminDashboard = () => {
                     <div className="space-y-4">
                         <p><strong>Nombre:</strong> {selectedOrder.nombre}</p>
                         <p><strong>Correo:</strong> {selectedOrder.email}</p>
+                        <p><strong>Teléfono:</strong> {selectedOrder.telefono}</p>
                         <p><strong>Fecha:</strong> {selectedOrder.fechaPedido?.toDate().toLocaleString()}</p>
                         <p><strong>Estado:</strong> <span className={`font-semibold ${selectedOrder.status === 'Completado' ? 'text-green-600' : 'text-orange-500'}`}>{selectedOrder.status}</span></p>
-                        <p><strong>Total:</strong> ${selectedOrder.totalFinal?.toFixed(2)}</p>
+                        <hr className="my-2" />
+                        <h4 className="text-xl font-semibold mb-2">Información de Envío:</h4>
+                        <p><strong>Opción de Envío:</strong> {selectedOrder.opcionEnvio === 'domicilio' ? 'Envío a Domicilio' : 'Recoger en Tienda'}</p>
+                        {selectedOrder.opcionEnvio === 'domicilio' && (
+                            <>
+                                <p><strong>Dirección:</strong> {selectedOrder.direccion}</p>
+                                <p><strong>Referencia:</strong> {selectedOrder.referencia}</p>
+                                <p><strong>Costo de Envío:</strong> ${selectedOrder.costoEnvio?.toFixed(2)}</p>
+                            </>
+                        )}
                         <hr className="my-2" />
                         <h4 className="text-xl font-semibold mb-2">Artículos:</h4>
                         <ul className="list-disc list-inside space-y-2">
@@ -120,6 +130,8 @@ const AdminDashboard = () => {
                                 </li>
                             ))}
                         </ul>
+                        <hr className="my-2" />
+                        <p className="text-lg font-bold">Total: ${selectedOrder.totalFinal?.toFixed(2)}</p>
                     </div>
                     <div className="mt-6 flex space-x-4">
                         <button

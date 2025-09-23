@@ -69,7 +69,7 @@ const Checkout = () => {
         try {
             await addDoc(collection(db, 'pedidos'), orderData);
             clearCart();
-            navigate('/confirmacion');
+            navigate('/confirmacion', { state: { opcionEnvio: orderData.opcionEnvio } });
         } catch (err) {
             console.error("Error al guardar el pedido:", err);
             setError("Ocurrió un error al procesar tu pedido. Intenta de nuevo.");
