@@ -67,11 +67,34 @@ const Checkout = () => {
             userId: userId,
         };
         try {
+            // --- Paso 1: Guardar los datos del pedido en Firestore ---
             await addDoc(collection(db, 'pedidos'), orderData);
+            console.log("Pedido guardado con éxito.");
+
+            // --- Paso 2: Enviar la notificación a la API de Vercel ---
+            // Se construye el cuerpo de la notificación con la información del pedido.
+            const notificationData = {
+                title: "🎉 Nuevo Pedido Recibido",
+                body: `Un nuevo pedido de ${nombre} por un total de $${totalFinal.toFixed(2)} ha sido realizado. ¡Revisa el panel de administración!`
+            };
+
+            // Realiza la petición POST a tu API de Vercel.
+            await fetch('https://lapostriza-project.vercel.app/api/pushbullet-notify', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(notificationData),
+            });
+
+            console.log("Notificación enviada a Vercel con éxito.");
+
+            // --- Paso 3: Limpiar el carrito y navegar al siguiente paso ---
             clearCart();
             navigate('/confirmacion', { state: { opcionEnvio: orderData.opcionEnvio } });
+
         } catch (err) {
-            console.error("Error al guardar el pedido:", err);
+            console.error("Error al procesar el pedido o enviar la notificación:", err);
             setError("Ocurrió un error al procesar tu pedido. Intenta de nuevo.");
         } finally {
             setLoading(false);
