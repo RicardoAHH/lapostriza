@@ -1,47 +1,56 @@
-// Archivo: api/pushbullet-notify.js
+// api/pushbullet-notify.js
 
-// Importa las dependencias necesarias.
-// Necesitas instalar la librería de Pushbullet: npm install pushbullet
-const Pushbullet = require('pushbullet');
+export default async function handler(req, res) {
+    // Esta es la configuración principal para solucionar el error de CORS.
+    // Permite peticiones desde cualquier origen ('*'). Para mayor seguridad,
+    // podrías especificar tu dominio 'https://lapostriza.vercel.app'.
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-// La función principal que Vercel ejecutará
-// Se exporta usando la sintaxis de CommonJS (module.exports)
-module.exports = async (req, res) => {
-    // Solo permite peticiones POST
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Método no permitido' });
+    // El navegador envía una petición de "preflight" (OPTIONS) para verificar las cabeceras
+    // antes de la petición real (POST). Si el método es OPTIONS, respondemos con 200 OK.
+    if (req.method === 'OPTIONS') {
+        res.status(200).end();
+        return;
     }
+
+    // Comprueba que el método de la petición es POST
+    if (req.method !== 'POST') {
+        return res.status(405).json({ message: 'Method Not Allowed' });
+    }
+
+    const { title, body } = req.body;
+
+    // Asegúrate de tener tu token de Pushbullet en las variables de entorno de Vercel
+    const PUSHBULLET_TOKEN = process.env.PUSHBULLET_TOKEN;
+    const pushbulletApiUrl = 'https://api.pushbullet.com/v2/pushes';
 
     try {
-        const { title, body } = req.body;
-
-        // Accede a la clave de Pushbullet desde las variables de entorno de Vercel
-        const pushbulletKey = process.env.PUSHBULLET_API_KEY;
-
-        if (!pushbulletKey) {
-            console.error("Error: La API key de Pushbullet no se encontró en las variables de entorno de Vercel.");
-            return res.status(500).json({ error: 'API key no encontrada en la configuración.' });
-        }
-
-        const pusher = new Pushbullet(pushbulletKey);
-
-        // Envía la notificación
-        await new Promise((resolve, reject) => {
-            pusher.note(null, title, body, (error, response) => {
-                if (error) {
-                    console.error("Error al enviar la notificación:", error);
-                    reject(error);
-                } else {
-                    console.log("Notificación de Pushbullet enviada con éxito:", response);
-                    resolve();
-                }
-            });
+        const pushbulletResponse = await fetch(pushbulletApiUrl, {
+            method: 'POST',
+            headers: {
+                'Access-Token': PUSHBULLET_TOKEN,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                type: 'note',
+                title: title || 'Nuevo Pedido',
+                body: body || 'Hay un nuevo pedido en La Postriza.',
+            }),
         });
 
-        res.status(200).json({ success: true, message: 'Notificación enviada con éxito.' });
-
+        if (pushbulletResponse.ok) {
+            return res.status(200).json({ message: 'Notification sent successfully' });
+        } else {
+            const errorData = await pushbulletResponse.json();
+            return res.status(pushbulletResponse.status).json({
+                message: 'Failed to send notification to Pushbullet',
+                details: errorData,
+            });
+        }
     } catch (error) {
-        console.error('Error interno del servidor:', error);
-        res.status(500).json({ error: 'Error interno del servidor.' });
+        console.error('Error sending notification:', error);
+        return res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
-};
+}
