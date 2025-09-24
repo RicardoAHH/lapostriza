@@ -79,7 +79,7 @@ const Checkout = () => {
             };
 
             // Realiza la petición POST a tu API de Vercel.
-            await fetch('https://lapostriza-project.vercel.app/api/pushbullet-notify', {
+            await fetch('https://lapostriza.vercel.app/api/pushbullet-notify', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
